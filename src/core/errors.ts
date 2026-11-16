@@ -9,7 +9,16 @@ export type ErrorCode =
   | "DEPS_UNMET"
   | "MAX_WORKERS"
   | "EVAL_NOT_PASSED"
-  | "STALE_EVAL";
+  | "STALE_EVAL"
+  | "GIT_FAILED";
+
+/** The command was called wrongly (missing argument, bad name). The CLI prints usage and exits 2. */
+export class UsageError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "UsageError";
+  }
+}
 
 /** An expected, user-facing failure. The CLI prints the message and exits 1 ("refused"). */
 export class SaError extends Error {

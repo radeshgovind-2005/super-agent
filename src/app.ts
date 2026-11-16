@@ -1,14 +1,16 @@
 import { readFileSync } from "node:fs";
+import { claim } from "./commands/claim.js";
+import { event } from "./commands/event.js";
 import { next } from "./commands/next.js";
 import { status } from "./commands/status.js";
 import type { Command, Ctx } from "./commands/types.js";
-import { SaError } from "./core/errors.js";
+import { SaError, UsageError } from "./core/errors.js";
 import { EXIT, type Io } from "./io.js";
 
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [next, status];
+const COMMANDS: readonly Command[] = [next, claim, event, status];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 
@@ -60,11 +62,15 @@ export async function run(argv: readonly string[], io: Io, ctx: Partial<Ctx> = {
     return EXIT.ok;
   }
 
-  const full: Ctx = { cwd: ctx.cwd ?? process.cwd(), now: ctx.now ?? (() => new Date()) };
+  const full: Ctx = {
+    cwd: ctx.cwd ?? process.cwd(),
+    now: ctx.now ?? (() => new Date()),
+    env: ctx.env ?? process.env,
+  };
   try {
     return await command.main(rest, io, full);
   } catch (e) {
-    if (isParseArgsError(e)) {
+    if (isParseArgsError(e) || e instanceof UsageError) {
       io.stderr(`sa ${name}: ${e.message}\n\n${command.usage}`);
       return EXIT.usage;
     }

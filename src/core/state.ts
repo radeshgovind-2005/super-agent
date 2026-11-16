@@ -103,28 +103,33 @@ export async function loadState(saDir: string): Promise<State> {
   return parseState(raw);
 }
 
-/** Validate, then atomically write state.json and regenerate board.md. Callers should hold the lock (use updateState). */
+/**
+ * Validate, regenerate board.md, then atomically write state.json. Callers should hold
+ * the lock (use updateState). state.json is written LAST, so if this throws, the truth
+ * is unchanged and callers can safely undo their side effects.
+ */
 export async function saveState(saDir: string, state: State): Promise<void> {
   const valid = parseState(state);
-  await writeFileAtomic(join(saDir, STATE_FILE), `${JSON.stringify(valid, null, 2)}\n`);
   const board = join(saDir, BOARD_FILE);
   await mkdir(dirname(board), { recursive: true });
   await writeFileAtomic(board, renderBoard(valid));
+  await writeFileAtomic(join(saDir, STATE_FILE), `${JSON.stringify(valid, null, 2)}\n`);
 }
 
 /**
  * The one way to change state: lock, load, apply `change`, save, unlock.
- * If `change` throws (e.g. an illegal transition), nothing is written.
+ * If `change` throws (e.g. an illegal transition), nothing is written. `change` may be
+ * async, e.g. to create a git worktree while the lock is held.
  */
 export async function updateState(
   saDir: string,
-  change: (state: State) => State,
+  change: (state: State) => State | Promise<State>,
   lock: LockOptions = {},
 ): Promise<State> {
   return withLock(
     join(saDir, LOCK_FILE),
     async () => {
-      const next = change(await loadState(saDir));
+      const next = await change(await loadState(saDir));
       await saveState(saDir, next);
       return next;
     },

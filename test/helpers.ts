@@ -33,9 +33,13 @@ export function git(cwd: string, ...args: string[]): string {
   ).trim();
 }
 
-/** A temp git repo with one empty commit on main. */
+/**
+ * A temp git repo named "repo" with one empty commit on main. It sits one level
+ * inside its temp dir, so sa's sibling worktree folder (../.sa-worktrees) is cleaned up too.
+ */
 export async function tempRepo(): Promise<string> {
-  const dir = await tempDir();
+  const dir = join(await tempDir(), "repo");
+  await mkdir(dir);
   git(dir, "init", "-q", "-b", "main");
   git(dir, "commit", "-q", "--allow-empty", "-m", "init");
   return dir;
