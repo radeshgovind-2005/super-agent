@@ -3,6 +3,7 @@ import { add } from "./commands/add.js";
 import { block } from "./commands/block.js";
 import { claim } from "./commands/claim.js";
 import { evalCmd } from "./commands/eval.js";
+import { hook } from "./commands/hook.js";
 import { event } from "./commands/event.js";
 import { init } from "./commands/init.js";
 import { next } from "./commands/next.js";
@@ -16,7 +17,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, submit, block, status];
+const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, submit, block, status, hook];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 
@@ -36,6 +37,12 @@ function readVersion(): string {
     readFileSync(new URL("../package.json", import.meta.url), "utf8"),
   ) as { version: string };
   return pkg.version;
+}
+
+async function readProcessStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
 }
 
 const isParseArgsError = (e: unknown): e is Error =>
@@ -72,6 +79,7 @@ export async function run(argv: readonly string[], io: Io, ctx: Partial<Ctx> = {
     cwd: ctx.cwd ?? process.cwd(),
     now: ctx.now ?? (() => new Date()),
     env: ctx.env ?? process.env,
+    readStdin: ctx.readStdin ?? readProcessStdin,
   };
   try {
     return await command.main(rest, io, full);

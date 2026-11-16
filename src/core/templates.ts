@@ -43,6 +43,7 @@ with type: command. Example:
   type: command        # command | browser | rubric
   run: npm test -- tags
   expect: exit 0
+  files: [test/tags.test.ts]   # tests this check uses; workers may not edit them
 -->
 
 \`\`\`yaml

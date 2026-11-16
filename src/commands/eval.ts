@@ -95,6 +95,66 @@ export function renderEval(report: EvalReport, checks: Check[]): string {
   return lines.join("\n");
 }
 
+/**
+ * Run a ticket's command checks in its worktree and record the result (lastEval + eval event).
+ * Shared by `sa eval` and the Stop hook. Throws SaError if the eval cannot run.
+ */
+export async function runTicketEval(
+  saDir: string,
+  id: string,
+  now: Date,
+): Promise<{ report: EvalReport; checks: Check[] }> {
+  const state = await loadState(saDir);
+  const ticket = state.tickets[id];
+  if (!ticket) throw new SaError("UNKNOWN_TICKET", `Unknown ticket ${id}`);
+
+  // Refuse before running anything if the result could not be recorded.
+  const at = now.toISOString();
+  recordEval(state, id, { result: "fail", at, failed: [] });
+
+  const checks = await loadEvalChecks(saDir, id);
+  if (!checks.some((c) => c.type === "command")) {
+    throw new SaError("NO_COMMAND_CHECK", `The eval for ticket ${id} has no command check, so sa cannot run it`);
+  }
+
+  const worktree = resolve(dirname(saDir), ticket.worktree!);
+  if (!existsSync(worktree)) throw new SaError("GIT_FAILED", `Worktree for ticket ${id} not found at ${worktree}`);
+
+  const warnings: string[] = [];
+  const headBefore = headCommit(worktree);
+  const clean = isClean(worktree);
+  const reports = await runChecks(checks, worktree, id);
+  const headAfter = headCommit(worktree);
+
+  if (!clean) {
+    warnings.push(
+      "The worktree has uncommitted changes, so this eval is not tied to a commit. Commit, then run sa eval again before sa submit.",
+    );
+  } else if (headBefore !== headAfter) {
+    warnings.push("HEAD moved while the checks ran, so this eval is not tied to a commit. Run sa eval again.");
+  }
+  const commit = clean && headBefore === headAfter ? headBefore : null;
+
+  const failed = reports.filter((r) => r.status === "fail").map((r) => r.id);
+  const skipped = reports.filter((r) => r.status === "skipped").map((r) => r.id);
+  const result = failed.length ? "fail" : "pass";
+
+  const evalResult: EvalResult = { result, at, failed, ...(commit ? { commit } : {}) };
+  await updateState(saDir, (s) => recordEval(s, id, evalResult));
+  await appendEvent(saDir, {
+    t: at,
+    agent: ticket.owner ?? "sa",
+    ticket: id,
+    type: "eval",
+    result,
+    failed,
+    skipped,
+    ...(commit ? { commit } : {}),
+  });
+
+  return { report: { id, result, failed, skipped, commit, warnings, checks: reports }, checks };
+}
+
 export const evalCmd: Command = {
   name: "eval",
   summary: "Run a ticket's command checks in its worktree and record pass/fail",
@@ -114,57 +174,8 @@ Exits 0 if every command check passed, 1 otherwise.
     const [id, ...extra] = positionals;
     if (!id || extra.length) throw new UsageError("Expected exactly one ticket <id>");
 
-    const saDir = findSuperagentDir(ctx.cwd);
-    const state = await loadState(saDir);
-    const ticket = state.tickets[id];
-    if (!ticket) throw new SaError("UNKNOWN_TICKET", `Unknown ticket ${id}`);
-
-    // Refuse before running anything if the result could not be recorded.
-    const at = ctx.now().toISOString();
-    recordEval(state, id, { result: "fail", at, failed: [] });
-
-    const checks = await loadEvalChecks(saDir, id);
-    if (!checks.some((c) => c.type === "command")) {
-      throw new SaError("NO_COMMAND_CHECK", `The eval for ticket ${id} has no command check, so sa cannot run it`);
-    }
-
-    const worktree = resolve(dirname(saDir), ticket.worktree!);
-    if (!existsSync(worktree)) throw new SaError("GIT_FAILED", `Worktree for ticket ${id} not found at ${worktree}`);
-
-    const warnings: string[] = [];
-    const headBefore = headCommit(worktree);
-    const clean = isClean(worktree);
-    const reports = await runChecks(checks, worktree, id);
-    const headAfter = headCommit(worktree);
-
-    if (!clean) {
-      warnings.push(
-        "The worktree has uncommitted changes, so this eval is not tied to a commit. Commit, then run sa eval again before sa submit.",
-      );
-    } else if (headBefore !== headAfter) {
-      warnings.push("HEAD moved while the checks ran, so this eval is not tied to a commit. Run sa eval again.");
-    }
-    const commit = clean && headBefore === headAfter ? headBefore : null;
-
-    const failed = reports.filter((r) => r.status === "fail").map((r) => r.id);
-    const skipped = reports.filter((r) => r.status === "skipped").map((r) => r.id);
-    const result = failed.length ? "fail" : "pass";
-
-    const evalResult: EvalResult = { result, at, failed, ...(commit ? { commit } : {}) };
-    await updateState(saDir, (s) => recordEval(s, id, evalResult));
-    await appendEvent(saDir, {
-      t: at,
-      agent: ticket.owner ?? "sa",
-      ticket: id,
-      type: "eval",
-      result,
-      failed,
-      skipped,
-      ...(commit ? { commit } : {}),
-    });
-
-    const report: EvalReport = { id, result, failed, skipped, commit, warnings, checks: reports };
+    const { report, checks } = await runTicketEval(findSuperagentDir(ctx.cwd), id, ctx.now());
     io.stdout(values.json ? `${JSON.stringify(report, null, 2)}\n` : renderEval(report, checks));
-    return result === "pass" ? EXIT.ok : EXIT.refused;
+    return report.result === "pass" ? EXIT.ok : EXIT.refused;
   },
 };

@@ -5,6 +5,8 @@ export interface Ctx {
   cwd: string;
   now: () => Date;
   env: Readonly<Record<string, string | undefined>>;
+  /** All of stdin (hooks read their JSON input from it). */
+  readStdin: () => Promise<string>;
 }
 
 export interface Command {
