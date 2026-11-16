@@ -17,7 +17,8 @@ export type ErrorCode =
   | "WRONG_BRANCH"
   | "GH_FAILED"
   | "DUPLICATE_TICKET"
-  | "ALREADY_INITIALIZED";
+  | "ALREADY_INITIALIZED"
+  | "INVALID_SETTINGS";
 
 /** The command was called wrongly (missing argument, bad name). The CLI prints usage and exits 2. */
 export class UsageError extends Error {
