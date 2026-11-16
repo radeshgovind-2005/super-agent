@@ -64,6 +64,17 @@ describe("parseEvalMarkdown", () => {
     ]);
   });
 
+  it("reads the files a command check protects", () => {
+    const [c] = parseEvalMarkdown(md("- {id: C1, type: command, run: npm test, files: [test/a.test.ts, test/b.ts]}"));
+    expect(c).toMatchObject({ files: ["test/a.test.ts", "test/b.ts"] });
+  });
+
+  it("rejects files that are not a list of paths", () => {
+    expect(evalError(md("- {id: C1, type: command, run: a, files: test/a.ts}"))).toMatch(
+      /check C1: files: expected a list of paths/,
+    );
+  });
+
   it("defaults a command check to expect exit 0", () => {
     expect(parseEvalMarkdown(md("- id: C1\n  type: command\n  run: 'true'"))[0]).toMatchObject({ expectExit: 0 });
   });

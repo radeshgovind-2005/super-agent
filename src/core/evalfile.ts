@@ -17,6 +17,8 @@ export interface CommandCheck {
   run: string;
   expectExit: number;
   timeoutSec: number;
+  /** Test files this check relies on; a worker may not edit them. Relative to the worktree. */
+  files?: string[];
 }
 
 /** Browser and rubric checks need an agent or a person; sa reports them as skipped. */
@@ -99,7 +101,15 @@ function parseCheck(p: Problems, item: unknown, index: number, seen: Set<string>
       if (typeof r.timeout === "number" && r.timeout > 0) timeoutSec = r.timeout;
       else p.push(`${at}: timeout: expected seconds > 0`);
     }
-    return { id, type, run, expectExit, timeoutSec };
+    const check: CommandCheck = { id, type, run, expectExit, timeoutSec };
+    if (r.files !== undefined) {
+      if (Array.isArray(r.files) && r.files.length && r.files.every((f) => typeof f === "string" && f.length)) {
+        check.files = [...(r.files as string[])];
+      } else {
+        p.push(`${at}: files: expected a list of paths`);
+      }
+    }
+    return check;
   }
 
   const check: ManualCheck = { id, type, run };
