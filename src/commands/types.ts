@@ -4,6 +4,7 @@ import type { Io } from "../io.js";
 export interface Ctx {
   cwd: string;
   now: () => Date;
+  env: Readonly<Record<string, string | undefined>>;
 }
 
 export interface Command {

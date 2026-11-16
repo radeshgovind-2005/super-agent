@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SaError } from "../../src/core/errors.js";
@@ -112,6 +112,16 @@ describe("saveState", () => {
     await expect(saveState(dir, state({ "001": ticket({ dependsOn: ["404"] }) }))).rejects.toMatchObject({
       code: "INVALID_STATE",
     });
+    expect(await loadState(dir)).toEqual(good);
+  });
+
+  it("leaves state.json unchanged when writing board.md fails", async () => {
+    const dir = await tempSaDir();
+    const good = state({ "001": ticket({ title: "First" }) });
+    await saveState(dir, good);
+    await rm(join(dir, "tickets", "board.md"));
+    await mkdir(join(dir, "tickets", "board.md")); // a folder where the file should go
+    await expect(saveState(dir, state({ "001": ticket({ title: "Second" }) }))).rejects.toThrow();
     expect(await loadState(dir)).toEqual(good);
   });
 
