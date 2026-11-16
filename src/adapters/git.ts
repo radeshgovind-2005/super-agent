@@ -11,6 +11,23 @@ function stderrOf(e: unknown): string {
   return (typeof err === "string" && err.trim()) || (e as Error).message;
 }
 
+export function headCommit(path: string): string {
+  try {
+    return git(path, ["rev-parse", "HEAD"]);
+  } catch (e) {
+    throw new SaError("GIT_FAILED", `git rev-parse HEAD failed in ${path}: ${stderrOf(e)}`);
+  }
+}
+
+/** No staged, unstaged or untracked changes (ignored files do not count). */
+export function isClean(path: string): boolean {
+  try {
+    return git(path, ["status", "--porcelain"]) === "";
+  } catch (e) {
+    throw new SaError("GIT_FAILED", `git status failed in ${path}: ${stderrOf(e)}`);
+  }
+}
+
 export function branchExists(repo: string, branch: string): boolean {
   try {
     git(repo, ["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]);
