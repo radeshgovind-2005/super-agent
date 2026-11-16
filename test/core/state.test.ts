@@ -144,6 +144,11 @@ describe("updateState", () => {
     expect((await loadState(dir)).tickets["001"]?.title).toBe("Renamed");
   });
 
+  it("fails with NOT_INITIALIZED when .superagent/ does not exist", async () => {
+    const dir = join(await tempSaDir(), "missing");
+    await expect(updateState(dir, (s) => s)).rejects.toMatchObject({ code: "NOT_INITIALIZED" });
+  });
+
   it("does not save when the change function throws", async () => {
     const dir = await tempSaDir();
     const s = state({ "001": ticket() });

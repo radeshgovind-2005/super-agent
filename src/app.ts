@@ -1,8 +1,12 @@
 import { readFileSync } from "node:fs";
+import { add } from "./commands/add.js";
+import { block } from "./commands/block.js";
 import { claim } from "./commands/claim.js";
 import { evalCmd } from "./commands/eval.js";
 import { event } from "./commands/event.js";
+import { init } from "./commands/init.js";
 import { next } from "./commands/next.js";
+import { ready } from "./commands/ready.js";
 import { status } from "./commands/status.js";
 import { submit } from "./commands/submit.js";
 import type { Command, Ctx } from "./commands/types.js";
@@ -12,7 +16,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [next, claim, event, evalCmd, submit, status];
+const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, submit, block, status];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 
