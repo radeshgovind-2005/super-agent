@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { renderBoard } from "./board.js";
@@ -84,14 +85,15 @@ function parseEval(p: Problems, path: string, raw: unknown): EvalResult | null {
   return e;
 }
 
+const notInitialized = (saDir: string) =>
+  new SaError("NOT_INITIALIZED", `No state at ${join(saDir, STATE_FILE)}. Run /superagent init first.`);
+
 export async function loadState(saDir: string): Promise<State> {
   let text: string;
   try {
     text = await readFile(join(saDir, STATE_FILE), "utf8");
   } catch (e) {
-    if (isErrno(e, "ENOENT")) {
-      throw new SaError("NOT_INITIALIZED", `No state at ${join(saDir, STATE_FILE)}. Run /superagent init first.`);
-    }
+    if (isErrno(e, "ENOENT")) throw notInitialized(saDir);
     throw e;
   }
   let raw: unknown;
@@ -116,6 +118,19 @@ export async function saveState(saDir: string, state: State): Promise<void> {
   await writeFileAtomic(join(saDir, STATE_FILE), `${JSON.stringify(valid, null, 2)}\n`);
 }
 
+/** Create .superagent/ with an empty state. Refuses if state.json already exists. */
+export async function initState(saDir: string, run: State["run"]): Promise<State> {
+  await mkdir(saDir, { recursive: true });
+  return withLock(join(saDir, LOCK_FILE), async () => {
+    if (existsSync(join(saDir, STATE_FILE))) {
+      throw new SaError("ALREADY_INITIALIZED", `${saDir} is already initialised`);
+    }
+    const state: State = { version: 1, run, tickets: {} };
+    await saveState(saDir, state);
+    return state;
+  });
+}
+
 /**
  * The one way to change state: lock, load, apply `change`, save, unlock.
  * If `change` throws (e.g. an illegal transition), nothing is written. `change` may be
@@ -126,6 +141,8 @@ export async function updateState(
   change: (state: State) => State | Promise<State>,
   lock: LockOptions = {},
 ): Promise<State> {
+  // Without .superagent/ the lock file cannot be created; say what is wrong instead.
+  if (!existsSync(saDir)) throw notInitialized(saDir);
   return withLock(
     join(saDir, LOCK_FILE),
     async () => {

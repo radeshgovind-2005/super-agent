@@ -4,23 +4,16 @@ import { addWorktree, isWorktreeRoot, removeWorktree, type CreatedWorktree } fro
 import { UsageError } from "../core/errors.js";
 import { appendEvent } from "../core/events.js";
 import { findSuperagentDir } from "../core/paths.js";
+import { slugify } from "../core/slug.js";
 import { updateState } from "../core/state.js";
 import { claim as claimTransition } from "../core/transitions.js";
 import { EXIT } from "../io.js";
 import { resolveAgent } from "./agent.js";
 import type { Command } from "./types.js";
 
-/** "sa/<id>-<slug>", slug from the title: ascii, lowercase, dashes, max 40 chars. */
+/** "sa/<id>-<slug>", slug from the title. */
 export function branchName(id: string, title: string): string {
-  const slug = title
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40)
-    .replace(/-+$/, "");
-  return `sa/${id}-${slug || "ticket"}`;
+  return `sa/${id}-${slugify(title)}`;
 }
 
 /** Worktrees live beside the repo, grouped by repo name so two repos never collide. */

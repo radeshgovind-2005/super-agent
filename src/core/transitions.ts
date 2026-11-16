@@ -8,7 +8,39 @@
  *   ready --block--> blocked
  */
 import { SaError } from "./errors.js";
-import type { EvalResult, State, Ticket, TicketStatus } from "./types.js";
+import type { EvalResult, State, Ticket, TicketMode, TicketStatus } from "./types.js";
+
+export interface NewTicket {
+  title: string;
+  mode: TicketMode;
+  dependsOn: string[];
+}
+
+/** Register a new draft ticket. Dependencies must already exist, so cycles cannot form. */
+export function addTicket(state: State, id: string, input: NewTicket): State {
+  if (state.tickets[id]) throw new SaError("DUPLICATE_TICKET", `Ticket ${id} already exists`);
+  for (const dep of input.dependsOn) {
+    if (!state.tickets[dep]) throw new SaError("UNKNOWN_TICKET", `Unknown ticket ${dep}`);
+  }
+  return {
+    ...state,
+    tickets: {
+      ...state.tickets,
+      [id]: {
+        title: input.title,
+        status: "draft",
+        mode: input.mode,
+        dependsOn: [...input.dependsOn],
+        branch: null,
+        worktree: null,
+        owner: null,
+        attempts: 0,
+        lastEval: null,
+        pr: null,
+      },
+    },
+  };
+}
 
 function get(state: State, id: string): Ticket {
   const t = state.tickets[id];

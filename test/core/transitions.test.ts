@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SaError } from "../../src/core/errors.js";
 import {
+  addTicket,
   block,
   claim,
   markDone,
@@ -149,6 +150,27 @@ describe("submit", () => {
     const { commit: _drop, ...noCommit } = passEval;
     const s = state({ "001": ticketIn("in_progress", { lastEval: noCommit }) });
     expect(codeOf(() => submit(s, "001", { pr, headCommit: "abc123" }))).toBe("STALE_EVAL");
+  });
+});
+
+describe("addTicket", () => {
+  it("adds a draft ticket with empty run fields", () => {
+    const s = deepFreeze(state({ "001": ticket() }));
+    const next = addTicket(s, "002", { title: "Search", mode: "team", dependsOn: ["001"] });
+    expect(next.tickets["002"]).toEqual(ticket({ title: "Search", mode: "team", dependsOn: ["001"] }));
+    expect(next.tickets["001"]).toBe(s.tickets["001"]);
+  });
+
+  it("refuses a duplicate id", () => {
+    expect(codeOf(() => addTicket(state({ "001": ticket() }), "001", { title: "X", mode: "solo", dependsOn: [] }))).toBe(
+      "DUPLICATE_TICKET",
+    );
+  });
+
+  it("refuses an unknown dependency", () => {
+    expect(codeOf(() => addTicket(state(), "001", { title: "X", mode: "solo", dependsOn: ["009"] }))).toBe(
+      "UNKNOWN_TICKET",
+    );
   });
 });
 
