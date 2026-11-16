@@ -8,3 +8,4 @@ coverage/
 .superagent/state.json
 .superagent/events.jsonl
 .superagent/state.lock
+.superagent/tickets/board.md
