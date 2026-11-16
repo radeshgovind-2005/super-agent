@@ -4,6 +4,7 @@ import { evalCmd } from "./commands/eval.js";
 import { event } from "./commands/event.js";
 import { next } from "./commands/next.js";
 import { status } from "./commands/status.js";
+import { submit } from "./commands/submit.js";
 import type { Command, Ctx } from "./commands/types.js";
 import { SaError, UsageError } from "./core/errors.js";
 import { EXIT, type Io } from "./io.js";
@@ -11,7 +12,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [next, claim, event, evalCmd, status];
+const COMMANDS: readonly Command[] = [next, claim, event, evalCmd, submit, status];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 

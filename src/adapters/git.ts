@@ -28,6 +28,24 @@ export function isClean(path: string): boolean {
   }
 }
 
+/** The checked-out branch, or "" when HEAD is detached. */
+export function currentBranch(path: string): string {
+  try {
+    return git(path, ["branch", "--show-current"]);
+  } catch (e) {
+    throw new SaError("GIT_FAILED", `git branch failed in ${path}: ${stderrOf(e)}`);
+  }
+}
+
+/** Push exactly `commit` to `branch` on `remote`, by explicit refspec, so nothing else is pushed. */
+export function pushCommit(cwd: string, remote: string, commit: string, branch: string): void {
+  try {
+    git(cwd, ["push", "--quiet", remote, `${commit}:refs/heads/${branch}`]);
+  } catch (e) {
+    throw new SaError("GIT_FAILED", `git push failed: ${stderrOf(e)}`);
+  }
+}
+
 export function branchExists(repo: string, branch: string): boolean {
   try {
     git(repo, ["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`]);
