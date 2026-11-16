@@ -1,0 +1,10 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Super Agent runtime state: only `sa` writes these, in the main checkout.
+.superagent/state.json
+.superagent/events.jsonl
+.superagent/state.lock
