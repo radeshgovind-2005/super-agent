@@ -12,7 +12,10 @@ export type ErrorCode =
   | "STALE_EVAL"
   | "GIT_FAILED"
   | "EVAL_FILE"
-  | "NO_COMMAND_CHECK";
+  | "NO_COMMAND_CHECK"
+  | "PROTECTED_BRANCH"
+  | "WRONG_BRANCH"
+  | "GH_FAILED";
 
 /** The command was called wrongly (missing argument, bad name). The CLI prints usage and exits 2. */
 export class UsageError extends Error {
