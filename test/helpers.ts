@@ -88,6 +88,28 @@ export function state(tickets: Record<string, Ticket> = {}, run: Partial<State["
   };
 }
 
+/** A temp git repo with .superagent/state.json written from `s`. */
+export async function tempProject(s: State): Promise<{ repo: string; saDir: string }> {
+  const repo = await tempRepo();
+  const saDir = join(repo, ".superagent");
+  await mkdir(saDir, { recursive: true });
+  const { saveState } = await import("../src/core/state.js");
+  await saveState(saDir, s);
+  return { repo, saDir };
+}
+
+/** Captures stdout/stderr for run(). */
+export function captureIo(): { stdout: (s: string) => void; stderr: (s: string) => void; out: () => string; err: () => string } {
+  let out = "";
+  let err = "";
+  return {
+    stdout: (s) => void (out += s),
+    stderr: (s) => void (err += s),
+    out: () => out,
+    err: () => err,
+  };
+}
+
 /** Recursively freezes a value, so tests catch any mutation by "pure" functions. */
 export function deepFreeze<T>(value: T): T {
   if (value && typeof value === "object") {
