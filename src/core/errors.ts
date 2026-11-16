@@ -10,7 +10,9 @@ export type ErrorCode =
   | "MAX_WORKERS"
   | "EVAL_NOT_PASSED"
   | "STALE_EVAL"
-  | "GIT_FAILED";
+  | "GIT_FAILED"
+  | "EVAL_FILE"
+  | "NO_COMMAND_CHECK";
 
 /** The command was called wrongly (missing argument, bad name). The CLI prints usage and exits 2. */
 export class UsageError extends Error {

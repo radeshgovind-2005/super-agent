@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { claim } from "./commands/claim.js";
+import { evalCmd } from "./commands/eval.js";
 import { event } from "./commands/event.js";
 import { next } from "./commands/next.js";
 import { status } from "./commands/status.js";
@@ -10,7 +11,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [next, claim, event, status];
+const COMMANDS: readonly Command[] = [next, claim, event, evalCmd, status];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 
