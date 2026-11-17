@@ -8,6 +8,7 @@ import { event } from "./commands/event.js";
 import { init } from "./commands/init.js";
 import { next } from "./commands/next.js";
 import { ready } from "./commands/ready.js";
+import { report } from "./commands/report.js";
 import { status } from "./commands/status.js";
 import { submit } from "./commands/submit.js";
 import { worker } from "./commands/worker.js";
@@ -18,7 +19,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, worker, submit, block, status, hook];
+const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, worker, submit, block, status, report, hook];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 

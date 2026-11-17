@@ -32,7 +32,7 @@ describe("agent and skill templates", () => {
     expect(frontmatter(md)).toMatchObject({ name: "superagent" });
     expect(md).toContain("$ARGUMENTS");
     for (const sub of ["init", "plan", "ready", "run", "status", "review"]) expect(md).toContain(`### ${sub}`);
-    for (const cmd of ["sa init", "sa add", "sa ready", "sa next", "sa claim", "sa worker start", "sa status"]) {
+    for (const cmd of ["sa init", "sa add", "sa ready", "sa next", "sa claim", "sa worker start", "sa status", "sa report"]) {
       expect(md).toContain(cmd);
     }
   });
