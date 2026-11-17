@@ -1,0 +1,21 @@
+{
+  "name": "superagent-playground",
+  "version": "0.0.0",
+  "private": true,
+  "description": "A small notes app (Vite + Node API + SQLite) used to test Super Agent runs.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev:api": "node server/index.js",
+    "dev:web": "vite",
+    "build": "vite build",
+    "test": "vitest run",
+    "test:acceptance": "vitest run --config vitest.acceptance.config.js"
+  },
+  "devDependencies": {
+    "vite": "8.3.8",
+    "vitest": "4.1.12"
+  }
+}
