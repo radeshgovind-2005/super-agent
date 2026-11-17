@@ -118,6 +118,10 @@ export async function saveState(saDir: string, state: State): Promise<void> {
   await writeFileAtomic(join(saDir, STATE_FILE), `${JSON.stringify(valid, null, 2)}\n`);
 }
 
+export function stateExists(saDir: string): boolean {
+  return existsSync(join(saDir, STATE_FILE));
+}
+
 /** Create .superagent/ with an empty state. Refuses if state.json already exists. */
 export async function initState(saDir: string, run: State["run"]): Promise<State> {
   await mkdir(saDir, { recursive: true });
