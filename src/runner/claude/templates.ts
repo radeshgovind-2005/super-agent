@@ -53,8 +53,8 @@ Repeat until no ticket is ready or in progress:
 5. Blocked tickets: read the reason (\`sa status\`), and tell the user what is needed.
    Retry a ticket at most once (\`sa ready <id>\`, then claim it again).
 
-When nothing is left, summarise: which PRs are open, which tickets are blocked and
-why, and suggest /superagent review.
+When nothing is left, run \`sa report\` and summarise: which PRs are open, which
+tickets are blocked and why. Point the user to the report page.
 `;
 
 export const WORKER_MD = `---
@@ -127,8 +127,9 @@ waiting for review, what is blocked and why.
 
 ### review
 
-Not built yet (milestone 6). For now, list the open PRs from \`${sa} status --json\`
-with each ticket's eval result.
+Run \`${sa} report\`. It writes the run's review page (report.html) and run.json and
+prints their paths. Open the page for the user, then give a three-line summary:
+what shipped, what is blocked and why, and the first PR worth reading in full.
 `;
 }
 
