@@ -24,9 +24,12 @@ describe("sa init", () => {
     expect(r.out).toBe(
       [
         ".superagent/: created (2 workers, 2,000,000 tokens)",
-        ".claude/settings.json: updated (sa hooks + deny rules)",
+        ".claude/settings.json: updated (sa hooks, deny and allow rules)",
+        ".claude/agents/router.md: created",
+        ".claude/agents/worker.md: created",
+        ".claude/skills/superagent/SKILL.md: created",
         ".gitignore: updated",
-        "Next: commit .claude/settings.json and .gitignore before claiming tickets, so worker worktrees get the hooks.",
+        "Next: commit .claude/ and .gitignore before claiming tickets, so worker worktrees get the hooks and agents.",
         "",
       ].join("\n"),
     );
@@ -76,7 +79,8 @@ describe("sa init", () => {
     await writeFile(join(repo, ".gitignore"), "node_modules/\n");
     expect((await sa(repo, "init")).code).toBe(0);
     const settings = await readJson(join(repo, ".claude", "settings.json"));
-    expect(settings).toMatchObject({ model: "opus", permissions: { allow: ["Bash(npm *)"] } });
+    expect(settings.model).toBe("opus");
+    expect(settings.permissions.allow[0]).toBe("Bash(npm *)");
     expect(await readFile(join(repo, ".gitignore"), "utf8")).toMatch(/^node_modules\/\n/);
   });
 
@@ -90,6 +94,9 @@ describe("sa init", () => {
       [
         ".superagent/: already initialised (state kept)",
         ".claude/settings.json: up to date",
+        ".claude/agents/router.md: kept (already exists)",
+        ".claude/agents/worker.md: kept (already exists)",
+        ".claude/skills/superagent/SKILL.md: kept (already exists)",
         ".gitignore: up to date",
         "",
       ].join("\n"),

@@ -8,6 +8,7 @@ describe("ensureGitignore", () => {
       ".superagent/state.lock",
       ".superagent/events.jsonl",
       ".superagent/tickets/board.md",
+      ".superagent/runs/",
     ]);
   });
 

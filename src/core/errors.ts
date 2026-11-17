@@ -18,7 +18,9 @@ export type ErrorCode =
   | "GH_FAILED"
   | "DUPLICATE_TICKET"
   | "ALREADY_INITIALIZED"
-  | "INVALID_SETTINGS";
+  | "INVALID_SETTINGS"
+  | "SETUP_MISSING"
+  | "CLAUDE_FAILED";
 
 /** The command was called wrongly (missing argument, bad name). The CLI prints usage and exits 2. */
 export class UsageError extends Error {

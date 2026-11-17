@@ -53,7 +53,8 @@ describe("mergeSettings", () => {
     const s = settings as Record<string, any>;
     expect(changed).toBe(true);
     expect(s.model).toBe("opus");
-    expect(s.permissions.allow).toEqual(["Bash(npm test *)"]);
+    expect(s.permissions.allow[0]).toBe("Bash(npm test *)"); // user's rule kept first
+    expect(s.permissions.allow).toContain("Bash(sa *)");
     expect(s.permissions.deny[0]).toBe("Read(./private/**)");
     expect(s.permissions.deny.filter((r: string) => r === "Bash(git push * main)")).toHaveLength(1);
     expect(s.hooks.PostToolUse).toEqual(existing.hooks.PostToolUse);
