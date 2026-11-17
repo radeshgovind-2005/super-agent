@@ -44,7 +44,8 @@ Repeat until no ticket is ready or in progress:
 2. While fewer than the max workers are busy (\`sa status\` shows it):
    \`sa claim <id> --agent worker-<id> --json\`, then \`sa worker start <id>\`.
    The worker runs in the background in the ticket's worktree; its log path is printed.
-3. Wait (\`sleep 120\`), then check \`sa status --json\`.
+3. Wait (\`sleep 120\`), then \`sa sync\` (tickets whose PR a human merged become
+   done, which can unblock tickets that depend on them), then \`sa status --json\`.
 4. For each ticket still in progress:
    - Worker process gone (\`ps -p <pid>\`, pid from its "worker started" event) and the
      last eval passed on a commit: run \`sa submit <id>\`.
@@ -122,12 +123,13 @@ If ids are given, run only those tickets.
 
 ### status
 
-Run \`${sa} status\` and summarise it in a few lines: what is in progress, what is
+Run \`${sa} sync\` (marks tickets done whose PRs were merged), then \`${sa} status\`,
+and summarise it in a few lines: what is in progress, what is
 waiting for review, what is blocked and why.
 
 ### review
 
-Run \`${sa} report\`. It writes the run's review page (report.html) and run.json and
+Run \`${sa} sync\`, then \`${sa} report\`. It writes the run's review page (report.html) and run.json and
 prints their paths. Open the page for the user, then give a three-line summary:
 what shipped, what is blocked and why, and the first PR worth reading in full.
 `;

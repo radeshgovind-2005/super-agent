@@ -32,8 +32,18 @@ describe("agent and skill templates", () => {
     expect(frontmatter(md)).toMatchObject({ name: "superagent" });
     expect(md).toContain("$ARGUMENTS");
     for (const sub of ["init", "plan", "ready", "run", "status", "review"]) expect(md).toContain(`### ${sub}`);
-    for (const cmd of ["sa init", "sa add", "sa ready", "sa next", "sa claim", "sa worker start", "sa status", "sa report"]) {
+    for (const cmd of ["sa init", "sa add", "sa ready", "sa next", "sa claim", "sa worker start", "sa status", "sa sync", "sa report"]) {
       expect(md).toContain(cmd);
+    }
+  });
+
+  it("router and skill sync merged PRs before reading status", () => {
+    expect(ROUTER_MD).toContain("sa sync");
+    const md = skillMd("sa");
+    for (const sub of ["status", "review"]) {
+      const section = md.split(`### ${sub}`)[1]!.split("### ")[0]!;
+      expect(section.indexOf("sa sync"), sub).toBeGreaterThan(-1);
+      expect(section.indexOf("sa sync"), sub).toBeLessThan(section.search(/sa (status|report)/));
     }
   });
 
