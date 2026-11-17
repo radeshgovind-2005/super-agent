@@ -46,3 +46,14 @@ export function createPr(pr: NewPr, opts: GhOptions): string {
   if (!url) throw new SaError("GH_FAILED", `gh pr create failed: no PR URL in its output: ${out}`);
   return url;
 }
+
+export const PR_STATES = ["OPEN", "CLOSED", "MERGED"] as const;
+export type PrState = (typeof PR_STATES)[number];
+
+/** Whether the PR at `url` is open, closed without merging, or merged. */
+export function prState(url: string, opts: GhOptions): PrState {
+  const out = gh(["pr", "view", url, "--json", "state", "--jq", ".state"], opts, "gh pr view");
+  const state = PR_STATES.find((s) => s === out);
+  if (!state) throw new SaError("GH_FAILED", `gh pr view returned an unexpected PR state "${out}" for ${url}`);
+  return state;
+}

@@ -71,6 +71,13 @@ if [ "$1 $2" = "pr list" ]; then
   [ -n "$FAKE_GH_EXISTING" ] && echo "$FAKE_GH_EXISTING"
   exit 0
 fi
+if [ "$1 $2" = "pr view" ]; then
+  # FAKE_GH_STATES: lines of "<url> <STATE>"; a url not listed is OPEN.
+  if [ -n "$FAKE_GH_FAIL_VIEW" ]; then echo "$FAKE_GH_FAIL_VIEW" >&2; exit 1; fi
+  s=$(printf '%s\\n' "$FAKE_GH_STATES" | awk -v u="$3" '$1 == u { print $2 }')
+  echo "\${s:-OPEN}"
+  exit 0
+fi
 if [ "$1 $2" = "pr create" ]; then
   if [ -n "$FAKE_GH_FAIL" ]; then echo "$FAKE_GH_FAIL" >&2; exit 1; fi
   echo "Creating pull request..." >&2

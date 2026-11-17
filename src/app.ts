@@ -11,6 +11,7 @@ import { ready } from "./commands/ready.js";
 import { report } from "./commands/report.js";
 import { status } from "./commands/status.js";
 import { submit } from "./commands/submit.js";
+import { sync } from "./commands/sync.js";
 import { worker } from "./commands/worker.js";
 import type { Command, Ctx } from "./commands/types.js";
 import { SaError, UsageError } from "./core/errors.js";
@@ -19,7 +20,7 @@ import { EXIT, type Io } from "./io.js";
 export { EXIT, type Io } from "./io.js";
 export type { Ctx } from "./commands/types.js";
 
-const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, worker, submit, block, status, report, hook];
+const COMMANDS: readonly Command[] = [init, add, ready, next, claim, event, evalCmd, worker, submit, sync, block, status, report, hook];
 
 const width = Math.max(...COMMANDS.map((c) => c.name.length)) + 2;
 
