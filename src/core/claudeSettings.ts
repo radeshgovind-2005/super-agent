@@ -50,6 +50,28 @@ export const DENY_RULES: readonly string[] = [
   "Edit(**/.superagent/tickets/board.md)",
 ];
 
+/**
+ * Bash commands headless workers (permission mode acceptEdits) may run without a
+ * prompt. Anything else is refused, so a worker gets stuck rather than surprising you.
+ */
+export function allowRules(saCommand: string): string[] {
+  return [
+    `Bash(${saCommand} *)`,
+    "Bash(git add *)",
+    "Bash(git commit *)",
+    "Bash(git status *)",
+    "Bash(git diff *)",
+    "Bash(git log *)",
+    "Bash(git restore *)",
+    "Bash(npm test *)",
+    "Bash(npm run *)",
+    "Bash(npx vitest *)",
+    "Bash(npx tsc *)",
+    "Bash(sleep *)",
+    "Bash(ps -p *)",
+  ];
+}
+
 interface Handler {
   type: "command";
   command: string;
@@ -91,7 +113,10 @@ export function mergeSettings(existing: unknown, saCommand: string): { settings:
   const deny = permissions.deny ?? [];
   if (!Array.isArray(deny)) throw invalid("permissions.deny must be a list");
   for (const rule of DENY_RULES) if (!deny.includes(rule)) deny.push(rule);
-  settings.permissions = { ...permissions, deny };
+  const allow = permissions.allow ?? [];
+  if (!Array.isArray(allow)) throw invalid("permissions.allow must be a list");
+  for (const rule of allowRules(saCommand)) if (!allow.includes(rule)) allow.push(rule);
+  settings.permissions = { ...permissions, allow, deny };
 
   const hooks = settings.hooks ?? {};
   if (!isRecord(hooks)) throw invalid("hooks must be an object");
@@ -108,6 +133,38 @@ export function mergeSettings(existing: unknown, saCommand: string): { settings:
   settings.hooks = hooks;
 
   return { settings, changed: JSON.stringify(settings) !== JSON.stringify(existing) };
+}
+
+/** True when settings register sa's Stop and PreToolUse hooks. */
+export function hasSaHooks(settings: unknown): boolean {
+  if (!isRecord(settings) || !isRecord(settings.hooks)) return false;
+  const has = (event: string, kind: string) => {
+    const groups = (settings.hooks as Record<string, unknown>)[event];
+    return (
+      Array.isArray(groups) &&
+      groups.some(
+        (g) =>
+          isRecord(g) &&
+          Array.isArray(g.hooks) &&
+          g.hooks.some((h) => isRecord(h) && typeof h.command === "string" && h.command.trim().endsWith(` hook ${kind}`)),
+      )
+    );
+  };
+  return has("Stop", "stop") && has("PreToolUse", "pre-tool-use");
+}
+
+/** The command that runs sa, read back from the Stop hook ("<cmd> hook stop"), or null. */
+export function saCommandFrom(settings: unknown): string | null {
+  if (!isRecord(settings) || !isRecord(settings.hooks) || !Array.isArray(settings.hooks.Stop)) return null;
+  for (const g of settings.hooks.Stop) {
+    if (!isRecord(g) || !Array.isArray(g.hooks)) continue;
+    for (const h of g.hooks) {
+      if (isRecord(h) && typeof h.command === "string" && h.command.trim().endsWith(" hook stop")) {
+        return h.command.trim().slice(0, -" hook stop".length);
+      }
+    }
+  }
+  return null;
 }
 
 /** The repo's .claude/settings.json, or {} if there is none. */

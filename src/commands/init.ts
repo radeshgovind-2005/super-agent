@@ -6,6 +6,7 @@ import { updateGitignore } from "../core/gitignore.js";
 import { findSuperagentDir } from "../core/paths.js";
 import { initState, stateExists } from "../core/state.js";
 import { EXIT } from "../io.js";
+import { installRunnerFiles } from "../runner/claude/install.js";
 import type { Command } from "./types.js";
 
 function wholeNumber(flag: string, value: string | undefined, fallback: number, min: number, what: string): number {
@@ -23,6 +24,8 @@ Safe to run again. In the main checkout it:
   - creates .superagent/ with an empty board (kept if it already exists)
   - adds sa's Stop, SubagentStop and PreToolUse hooks and deny rules to
     .claude/settings.json, keeping your other settings
+  - writes .claude/agents/router.md, worker.md and the superagent skill
+    (only if missing, so your edits are kept)
   - adds sa's generated files to .gitignore
 Defaults: 2 workers, 2,000,000 tokens. --sa-command is how hooks run sa
 (default "sa", which must be on PATH), e.g. "node /path/to/dist/cli.js".
@@ -58,14 +61,17 @@ Defaults: 2 workers, 2,000,000 tokens. --sa-command is how hooks run sa
     }
 
     if (settingsChanged) await writeClaudeSettings(repoRoot, settings);
-    lines.push(`.claude/settings.json: ${settingsChanged ? "updated (sa hooks + deny rules)" : "up to date"}`);
+    lines.push(`.claude/settings.json: ${settingsChanged ? "updated (sa hooks, deny and allow rules)" : "up to date"}`);
+
+    const runnerFiles = await installRunnerFiles(repoRoot, saCommand);
+    for (const f of runnerFiles) lines.push(`${f.path}: ${f.created ? "created" : "kept (already exists)"}`);
 
     const ignoreChanged = await updateGitignore(repoRoot);
     lines.push(`.gitignore: ${ignoreChanged ? "updated" : "up to date"}`);
 
-    if (settingsChanged || ignoreChanged) {
+    if (settingsChanged || ignoreChanged || runnerFiles.some((f) => f.created)) {
       lines.push(
-        "Next: commit .claude/settings.json and .gitignore before claiming tickets, so worker worktrees get the hooks.",
+        "Next: commit .claude/ and .gitignore before claiming tickets, so worker worktrees get the hooks and agents.",
       );
     }
     io.stdout(`${lines.join("\n")}\n`);
